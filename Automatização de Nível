@@ -1,0 +1,94 @@
+// Sistema Automatizado de Controle de Nível
+// Arduino Uno + HC-SR04 + 74HC595 + LEDs + Buzzer + Motor
+
+const int TRIG = 9;
+const int ECHO = 10;
+
+const int DATA = 11;
+const int CLOCK = 12;
+const int LATCH = 8;
+
+const int BUZZER = 6;
+const int MOTOR = 7;
+
+void setup() {
+  pinMode(TRIG, OUTPUT);
+  pinMode(ECHO, INPUT);
+
+  pinMode(DATA, OUTPUT);
+  pinMode(CLOCK, OUTPUT);
+  pinMode(LATCH, OUTPUT);
+
+  pinMode(BUZZER, OUTPUT);
+  pinMode(MOTOR, OUTPUT);
+
+  Serial.begin(9600);
+}
+
+void loop() {
+
+  // Medição do sensor ultrassônico
+  digitalWrite(TRIG, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG, LOW);
+
+  long duracao = pulseIn(ECHO, HIGH);
+
+  float distancia = duracao * 0.0343 / 2;
+
+  // Conversão da distância para porcentagem
+  float nivel = map(distancia, 30, 5, 0, 100);
+
+  nivel = constrain(nivel, 0, 100);
+
+  // Controle do sistema
+  if (nivel < 15) {
+
+    digitalWrite(MOTOR, HIGH);
+    digitalWrite(BUZZER, HIGH);
+
+    // Vermelho
+    digitalWrite(LATCH, LOW);
+    shiftOut(DATA, CLOCK, MSBFIRST, B00000100);
+    digitalWrite(LATCH, HIGH);
+
+  } 
+  else if (nivel < 30) {
+
+    digitalWrite(MOTOR, HIGH);
+    digitalWrite(BUZZER, LOW);
+
+    // Amarelo
+    digitalWrite(LATCH, LOW);
+    shiftOut(DATA, CLOCK, MSBFIRST, B00000010);
+    digitalWrite(LATCH, HIGH);
+
+  } 
+  else {
+
+    digitalWrite(MOTOR, LOW);
+    digitalWrite(BUZZER, LOW);
+
+    // Verde
+    digitalWrite(LATCH, LOW);
+    shiftOut(DATA, CLOCK, MSBFIRST, B00000001);
+    digitalWrite(LATCH, HIGH);
+  }
+
+  Serial.print("Distancia: ");
+  Serial.print(distancia);
+  Serial.print(" cm | Nivel: ");
+  Serial.print(nivel);
+  Serial.print("% | Bomba: ");
+
+  if (digitalRead(MOTOR) == HIGH) {
+    Serial.println("LIGADA");
+  } else {
+    Serial.println("DESLIGADA");
+  }
+
+  delay(500);
+}
